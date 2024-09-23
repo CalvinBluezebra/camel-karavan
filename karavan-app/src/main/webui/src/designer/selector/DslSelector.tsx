@@ -40,7 +40,7 @@ import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
 import {addPreferredElement, deletePreferredElement, getPreferredElements} from "./DslPreferences";
 import {DslFastCard} from "./DslFastCard";
 import {DslCard} from "./DslCard";
-import {useDebounceValue} from 'usehooks-ts';
+import {useDebounceCallback, useDebounceValue} from 'usehooks-ts';
 
 interface Props {
     tabIndex?: string | number
@@ -58,7 +58,9 @@ export function DslSelector(props: Props) {
 
     const {onDslSelect} = useRouteDesignerHook();
 
-    const [filter, setFilter] = useDebounceValue('', 300)
+    const [filterShown, setFilterShown] =  useState<string>('');
+    const [filter, setFilter] = useDebounceValue('', 300);
+
     const [customOnly, setCustomOnly] = useState<boolean>(false);
     const [elements, setElements] = useState<DslMetaModel[]>([]);
     const [preferredElements, setPreferredElements] = useState<string[]>([]);
@@ -91,7 +93,9 @@ export function DslSelector(props: Props) {
         const p: string[] = []
         p.push(...getPreferredElements('kamelets'));
         p.push(...getPreferredElements('components'));
-        p.push(...getPreferredElements('eip'));
+        if (parentDsl !== undefined) {
+            p.push(...getPreferredElements('eip'));
+        }
         setPreferredElements(p);
     }
 
@@ -100,7 +104,6 @@ export function DslSelector(props: Props) {
     }
 
     function selectDsl(evt: React.MouseEvent, dsl: any) {
-        console.log('selectDsl', dsl)
         evt.stopPropagation();
         setFilter('');
         setShowSelector(false);
@@ -109,7 +112,6 @@ export function DslSelector(props: Props) {
     }
 
     function deleteFast(evt: React.MouseEvent, dsl: DslMetaModel) {
-        console.log('deleteFast', dsl)
         evt.stopPropagation();
         deletePreferredElement(getDslMetaModelType(dsl), dsl);
         setPreferences();
@@ -119,20 +121,22 @@ export function DslSelector(props: Props) {
         return (
             <TextInputGroup className="search">
                 <TextInput
-                    defaultValue={filter}
+                    value={filterShown}
                     type="text"
                     autoComplete={"off"}
                     autoFocus={true}
-                    onChange={(_event, value) => setFilter(value)}
+                    onChange={(_event, value) => {
+                        setFilterShown(value);
+                        setFilter(value);
+                    }}
                     aria-label="text input example"
                 />
-                {/*<TextInputGroupMain className="text-field" type="text" autoComplete={"off"}*/}
-                {/*                    value={filter}*/}
-                {/*                    autoFocus={true}*/}
-                {/*                    onChange={(_, value) => setFilter(value)}/>*/}
                 <TextInputGroupUtilities>
-                    <Button variant="plain" onClick={_ => setFilter('')}>
-                        <TimesIcon/>
+                    <Button variant="plain" onClick={_ => {
+                        setFilterShown('');
+                        setFilter('');
+                    }}>
+                        <TimesIcon aria-hidden={true}/>
                     </Button>
                 </TextInputGroupUtilities>
             </TextInputGroup>
@@ -140,13 +144,16 @@ export function DslSelector(props: Props) {
     }
 
     function getToggles() {
+        const isEIP = selectedToggles.includes('eip')
+        const isComp = selectedToggles.includes('components')
+        const isKam = selectedToggles.includes('kamelets')
         return (
-            <ToggleGroup aria-label="Default with single selectable">
+            <ToggleGroup aria-label="Default with single selectable" className='navigation-selector'>
                 {parentDsl !== undefined && <ToggleGroupItem
                     text={
                         <div style={{display: 'flex', flexDirection: 'row'}}>
                             <div style={{marginRight: '6px'}}>EIP</div>
-                            {ready && <Badge isRead={!selectedToggles.includes('eip')}>{eCount}</Badge>}
+                            {ready && <Badge isRead={!isEIP} className={isEIP ? "label-eip" : ""}>{eCount}</Badge>}
                         </div>
                     }
                     buttonId="eip"
@@ -160,7 +167,7 @@ export function DslSelector(props: Props) {
                     text={
                         <div style={{display: 'flex', flexDirection: 'row'}}>
                             <div style={{marginRight: '6px'}}>Components</div>
-                            {ready && <Badge isRead={!selectedToggles.includes('components')}>{cCount}</Badge>}
+                            {ready && <Badge isRead={!isComp} className={isComp ? "label-component" : ""}>{cCount}</Badge>}
                         </div>
                     }
                     buttonId="components"
@@ -174,7 +181,7 @@ export function DslSelector(props: Props) {
                     text={
                         <div style={{display: 'flex', flexDirection: 'row'}}>
                             <div style={{marginRight: '6px'}}>Kamelets</div>
-                            {ready && <Badge isRead={!selectedToggles.includes('kamelets')}>{kCount}</Badge>}
+                            {ready && <Badge isRead={!isKam} className={isKam ? "label-kamelet" : ""}>{kCount}</Badge>}
                         </div>
                     }
                     buttonId="kamelets"

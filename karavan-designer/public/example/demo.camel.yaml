@@ -1,22 +1,15 @@
 - route:
-    id: route-11b9
-    nodePrefixId: route-2ae
+    id: route-8a40
+    nodePrefixId: route-78f
     from:
-      id: from-d759
+      id: from-674b
       uri: timer
       parameters:
-        timerName: timer
+        timerName: name
       steps:
-        - aggregate:
-            id: aggregate-bf73
-        - to:
-            id: to-7baa
-            uri: jms
-            parameters:
-              destinationName: test
-        - to:
-            id: to-7f8a
-            uri: kamelet:aws-kinesis-firehose-sink
-        - to:
-            id: to-59a6
-            uri: djl
+        - doTry:
+            id: doTry-258c
+            doCatch:
+              - id: doCatch-32ac
+                exception:
+                  - java.lang.ArrayIndexOutOfBoundsException
